@@ -80,19 +80,19 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            if not game_over:
-                if coins and not coins[-1].settled:
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # left click
+            if coins != [] and coins[-1].settled == False:
+                break
+            color = turns[turn]
+            position_coin = (event.pos[0] // 100 * 100 + 50, event.pos[1] // 100 * 100 + 50)
+            coins.append(Coin(position_coin, color))
+            turn = (turn + 1) % 2
+            for coin in coins:
+                if coin != coins[-1] and coin.rect.colliderect(coins[-1].rect):
+                    coins.remove(coins[-1])
+                    print("Collision on spawn, coin not added.")
+                    turn = (turn - 1) % 2
                     break
-                col_clicked = event.pos[0] // COIN_SIZE
-                if 0 <= col_clicked < 7 and board[0][col_clicked] is None:
-                    color_name = turns[turn]
-                    position_coin = (col_clicked * 100 + 50, -50)
-                    coins.append(Coin(position_coin, color_name))
-                    turn = (turn + 1) % 2
-                else:
-                    print("This column is full or invalid!")
-
     screen.fill("black")
 
     # --- UI Drawing ---
