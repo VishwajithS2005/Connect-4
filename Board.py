@@ -10,7 +10,7 @@ pygame.display.set_caption("Connect 4")
 clock = pygame.time.Clock()
 running = True
 dt = 0
-
+interact = True
 # --- Constants ---
 GRAVITY = 1000  # pixels per second^2
 COIN_SIZE = 100
@@ -80,7 +80,7 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # left click
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and interact:  # left click
             if coins != [] and coins[-1].settled == False:
                 break
             color = turns[turn]
@@ -128,7 +128,7 @@ while running:
         overlay = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         screen.blit(overlay, (0, 0))
-        
+        interact=False
         winner_text = f"Player '{winner.capitalize()}' Wins!"
         winner_surface = WINNER_FONT.render(winner_text, True, "gold")
         winner_rect = winner_surface.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
