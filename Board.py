@@ -64,6 +64,7 @@ class Coin:
                     if self.velocity_y > 0:
                         self.rect.bottom = coin.rect.top
                         self.velocity_y = 0
+                        time.sleep(0.05)  # Small delay to ensure proper settling
                         self.settled = True
 
     def draw(self, surface):
@@ -85,49 +86,63 @@ while running:
 
         # --- Player Move ---
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and interact and turn == 0:
-            col = event.pos[0] // COIN_SIZE
+            if coins and not coins[-1].settled:
+                break  # wait until last coin settles
+
+            color = turns[turn]
+            position_coin = (event.pos[0] // 100 * 100 + 50, 50)  # start near top
+            coins.append(Coin(position_coin, color))
+
+            for coin in coins:
+                if coin != coins[-1] and coin.rect.colliderect(coins[-1].rect):
+                    coins.remove(coins[-1])
+                    print("Collision on spawn, coin not added.")
+                    break
+
+            # Do NOT change turn yet! Wait until coin settles
+    screen.fill((0, 0, 0))
+    # --- Update Coins ---
+    for coin in coins:
+        if not coin.settled:
+            coin.update(dt, screen.get_height(), coins)
+        else:
+            # Only switch turn after last coin settles
+            if coin == coins[-1] and turn == 0:
+                row = (coin.rect.centery - UI_HEIGHT) // 100
+                col = coin.rect.centerx // 100
+                if 0 <= row < 6 and 0 <= col < 7 and board[row][col] is None:
+                    board[row][col] = 0
+                    print(f"Player red placed at row {row}, column {col}")
+                    turn = 1 
+                    if winning_move(board, 0):
+                        winner = "red"
+                        game_over = True
+                    elif Drawcheck(board):
+                        winner = ""
+                        game_over = True
+        coin.draw(screen)
+
+    # --- AI Move ---
+    if turn == 1 and not game_over and interact:
+        if coins and not coins[-1].settled:
+            pass  # wait until last coin settles
+        else:
+            col, _ = minimax(board, 4, -math.inf, math.inf, True)
             row = get_next_open_row(board, col)
             if row is not None:
-                # Place player piece
-                board[row][col] = 0  # 0 = player (red)
-                position_coin = (col * COIN_SIZE + COIN_SIZE//2, UI_HEIGHT + row * COIN_SIZE + COIN_SIZE//2)
-                coins.append(Coin(position_coin, "red"))
-                print(f"Player red placed at row {row}, column {col}")
-
-                # Check for win/draw
-                if winning_move(board, 0):
-                    winner = "red"
+                board[row][col] = 1
+                position_coin = (col * COIN_SIZE + COIN_SIZE//2, 50)  # start from top
+                coins.append(Coin(position_coin, "blue"))
+                print(f"Player blue placed at row {row}, column {col}")
+                turn = 0  # back to player
+                if winning_move(board, 1):
+                    winner = "blue"
                     game_over = True
                 elif Drawcheck(board):
                     winner = ""
                     game_over = True
 
-                turn = 1  # AI turn
-
-    # --- AI Move ---
-    if turn == 1 and not game_over and interact:
-        col, _ = minimax(board, 4, -math.inf, math.inf, True)
-        row = get_next_open_row(board, col)
-        if row is not None:
-            board[row][col] = 1  # 1 = AI (blue)
-            position_coin = (col * COIN_SIZE + COIN_SIZE//2, UI_HEIGHT + row * COIN_SIZE + COIN_SIZE//2)
-            coins.append(Coin(position_coin, "blue"))
-            print(f"Player blue placed at row {row}, column {col}")
-
-            # Check for win/draw
-            if winning_move(board, 1):
-                winner = "blue"
-                game_over = True
-            elif Drawcheck(board):
-                winner = ""
-                game_over = True
-
-            turn = 0  # back to player
-
-    # --- Drawing ---
-    screen.fill("black")
-    for coin in coins:
-        coin.draw(screen)
+    
     screen.blit(obstacle, (0, UI_HEIGHT))
 
     # --- UI Drawing ---
