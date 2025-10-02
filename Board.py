@@ -77,7 +77,7 @@ def run_game(player_color="red", difficulty="medium"):
     player_color = player_color.lower()
     difficulty = difficulty.lower()
     turn = turns.index(player_color)  # 0 for player, 1 for AI
-    depth_map = {"easy": 2, "medium": 4, "hard": 6}
+    depth_map = {"easy": 1, "medium": 3, "hard": 5}
     minimax_depth = depth_map.get(difficulty, 4)
     board = [[None for _ in range(7)] for _ in range(6)]
     game_over = False
