@@ -5,185 +5,190 @@ from Minimax import *
 import time
 
 # --- Initialization ---
-pygame.init()
-UI_HEIGHT = 100
-screen = pygame.display.set_mode((700, 600 + UI_HEIGHT))
-pygame.display.set_caption("Connect 4")
-clock = pygame.time.Clock()
-running = True
-dt = 0
-interact = True
-# --- Constants ---
-GRAVITY = 1000  # pixels per second^2
-COIN_SIZE = 100
+def run_game(player_color="red", difficulty="medium"):
+    pygame.init()
+    UI_HEIGHT = 100
+    screen = pygame.display.set_mode((700, 600 + UI_HEIGHT))
+    pygame.display.set_caption("Connect 4")
+    clock = pygame.time.Clock()
+    running = True
+    dt = 0
+    interact = True
+    # --- Constants ---
+    GRAVITY = 1000  # pixels per second^2
+    COIN_SIZE = 100
 
-# --- Font Setup ---
-UI_FONT = pygame.font.Font(None, 48)
-WINNER_FONT = pygame.font.Font(None, 72)
+    # --- Font Setup ---
+    UI_FONT = pygame.font.Font(None, 48)
+    WINNER_FONT = pygame.font.Font(None, 72)
 
-# --- Load Coin Assets ---
-try:
-    RED_COIN_IMG = pygame.image.load('assets/images/coin_red.png').convert_alpha()
-    BLUE_COIN_IMG = pygame.image.load('assets/images/coin_blue.png').convert_alpha()
-    RED_COIN = pygame.transform.scale(RED_COIN_IMG, (COIN_SIZE, COIN_SIZE))
-    BLUE_COIN = pygame.transform.scale(BLUE_COIN_IMG, (COIN_SIZE, COIN_SIZE))
-except pygame.error as e:
-    print(f"Error loading coin assets: {e}")
-    running = False
+    # --- Load Coin Assets ---
+    try:
+        RED_COIN_IMG = pygame.image.load('assets/images/coin_red.png').convert_alpha()
+        BLUE_COIN_IMG = pygame.image.load('assets/images/coin_blue.png').convert_alpha()
+        RED_COIN = pygame.transform.scale(RED_COIN_IMG, (COIN_SIZE, COIN_SIZE))
+        BLUE_COIN = pygame.transform.scale(BLUE_COIN_IMG, (COIN_SIZE, COIN_SIZE))
+    except pygame.error as e:
+        print(f"Error loading coin assets: {e}")
+        running = False
 
-# --- Original Board Creation ---
-obstacle = pygame.Surface((700, 600), pygame.SRCALPHA)
-obstacle.fill((0, 0, 180))
-for x in range(0, 700, COIN_SIZE):
-    for y in range(0, 600, COIN_SIZE):
-        pygame.draw.circle(obstacle, (0, 0, 0, 0), (x + COIN_SIZE//2, y + COIN_SIZE//2), COIN_SIZE // 2 - 5)
+    # --- Original Board Creation ---
+    obstacle = pygame.Surface((700, 600), pygame.SRCALPHA)
+    obstacle.fill((0, 0, 180))
+    for x in range(0, 700, COIN_SIZE):
+        for y in range(0, 600, COIN_SIZE):
+            pygame.draw.circle(obstacle, (0, 0, 0, 0), (x + COIN_SIZE//2, y + COIN_SIZE//2), COIN_SIZE // 2 - 5)
 
-# --- Coin Class ---
-class Coin:
-    def __init__(self, pos, color_name):
-        if color_name == "red":
-            self.image = RED_COIN
-        elif color_name == "blue":
-            self.image = BLUE_COIN
-        self.rect = self.image.get_rect(center=pos)
-        self.velocity_y = 0
-        self.settled = False
+    # --- Coin Class ---
+    class Coin:
+        def __init__(self, pos, color_name):
+            if color_name == "red":
+                self.image = RED_COIN
+            elif color_name == "blue":
+                self.image = BLUE_COIN
+            self.rect = self.image.get_rect(center=pos)
+            self.velocity_y = 0
+            self.settled = False
 
-    def update(self, dt, screen_height, coins):
-        if not self.settled:
-            self.velocity_y += GRAVITY * dt
-            self.rect.y += self.velocity_y * dt
+        def update(self, dt, screen_height, coins):
+            if not self.settled:
+                self.velocity_y += GRAVITY * dt
+                self.rect.y += self.velocity_y * dt
 
-            if self.rect.bottom >= screen_height:
-                self.rect.bottom = screen_height
-                self.velocity_y = 0
-                self.settled = True
+                if self.rect.bottom >= screen_height:
+                    self.rect.bottom = screen_height
+                    self.velocity_y = 0
+                    self.settled = True
 
-            for coin in coins:
-                if coin != self and self.rect.colliderect(coin.rect):
-                    if self.velocity_y > 0:
-                        self.rect.bottom = coin.rect.top
-                        self.velocity_y = 0
-                        time.sleep(0.05)  # Small delay to ensure proper settling
-                        self.settled = True
+                for coin in coins:
+                    if coin != self and self.rect.colliderect(coin.rect):
+                        if self.velocity_y > 0:
+                            self.rect.bottom = coin.rect.top
+                            self.velocity_y = 0
+                            time.sleep(0.05)  # Small delay to ensure proper settling
+                            self.settled = True
 
-    def draw(self, surface):
-        surface.blit(self.image, self.rect)
+        def draw(self, surface):
+            surface.blit(self.image, self.rect)
 
-# --- Game State Variables ---
-coins = []
-turns = ["red", "blue"]
-turn = 0
-board = [[None for _ in range(7)] for _ in range(6)]
-game_over = False
-winner = None
+    # --- Game State Variables ---
+    coins = []
+    turns = ["red", "blue"]
+    player_color = player_color.lower()
+    difficulty = difficulty.lower()
+    turn = turns.index(player_color)  # 0 for player, 1 for AI
+    depth_map = {"easy": 2, "medium": 4, "hard": 6}
+    minimax_depth = depth_map.get(difficulty, 4)
+    board = [[None for _ in range(7)] for _ in range(6)]
+    game_over = False
+    winner = None
 
-# --- Main Game Loop ---
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
+    # --- Main Game Loop ---
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
 
-        # --- Player Move ---
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and interact and turn == 0:
+            # --- Player Move ---
+            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and interact and turn == 0:
+                if coins and not coins[-1].settled:
+                    break  # wait until last coin settles
+
+                color = turns[turn]
+                position_coin = (event.pos[0] // 100 * 100 + 50, 50)  # start near top
+                col = event.pos[0] // 100
+                row = get_next_open_row(board, col)
+                if row is None:
+                    print(f"Column {col} is full. Cannot place coin.")
+                    continue  # skip placing coin
+                '''for coin in coins:
+                    if coin != coins[-1] and coin.rect.colliderect(coins[-1].rect):
+                        coins.remove(coins[-1])
+                        print("Collision on spawn, coin not added.")
+                        break'''
+                coins.append(Coin(position_coin, color))
+
+                # Do NOT change turn yet! Wait until coin settles
+        screen.fill((0, 0, 0))
+        screen.blit(obstacle, (0, UI_HEIGHT))
+        # --- Player Hover Preview ---
+        if turn == 0 and interact and not game_over:
+            mouse_x, _ = pygame.mouse.get_pos()
+            hover_col = mouse_x // COIN_SIZE
+            if 0 <= hover_col < 7:
+                # find row where coin would land
+                row_preview = get_next_open_row(board, hover_col)
+                if row_preview is not None:
+                    preview_pos = (hover_col * COIN_SIZE + COIN_SIZE//2, UI_HEIGHT + row_preview * COIN_SIZE + COIN_SIZE//2)
+                    # Draw semi-transparent red coin
+                    preview_surf = pygame.Surface((COIN_SIZE, COIN_SIZE), pygame.SRCALPHA)
+                    pygame.draw.circle(preview_surf, (255, 0, 0, 100), (COIN_SIZE//2, COIN_SIZE//2), COIN_SIZE//2 - 5)
+                    screen.blit(preview_surf, (hover_col * COIN_SIZE, UI_HEIGHT + row_preview * COIN_SIZE))
+
+        # --- Update Coins ---
+        for coin in coins:
+            if not coin.settled:
+                coin.update(dt, screen.get_height(), coins)
+            else:
+                # Only switch turn after last coin settles
+                if coin == coins[-1] and turn == 0:
+                    row = (coin.rect.centery - UI_HEIGHT) // 100
+                    col = coin.rect.centerx // 100
+                    if 0 <= row < 6 and 0 <= col < 7 and board[row][col] is None:
+                        board[row][col] = 0
+                        print(f"Player red placed at row {row}, column {col}")
+                        turn = 1 
+                        if winning_move(board, 0):
+                            winner = "red"
+                            game_over = True
+                        elif Drawcheck(board):
+                            winner = ""
+                            game_over = True
+            coin.draw(screen)
+
+        # --- AI Move ---
+        if turn == 1 and not game_over and interact:
             if coins and not coins[-1].settled:
-                break  # wait until last coin settles
-
-            color = turns[turn]
-            position_coin = (event.pos[0] // 100 * 100 + 50, 50)  # start near top
-            col = event.pos[0] // 100
-            row = get_next_open_row(board, col)
-            if row is None:
-                print(f"Column {col} is full. Cannot place coin.")
-                continue  # skip placing coin
-            '''for coin in coins:
-                if coin != coins[-1] and coin.rect.colliderect(coins[-1].rect):
-                    coins.remove(coins[-1])
-                    print("Collision on spawn, coin not added.")
-                    break'''
-            coins.append(Coin(position_coin, color))
-
-            # Do NOT change turn yet! Wait until coin settles
-    screen.fill((0, 0, 0))
-    screen.blit(obstacle, (0, UI_HEIGHT))
-    # --- Player Hover Preview ---
-    if turn == 0 and interact and not game_over:
-        mouse_x, _ = pygame.mouse.get_pos()
-        hover_col = mouse_x // COIN_SIZE
-        if 0 <= hover_col < 7:
-            # find row where coin would land
-            row_preview = get_next_open_row(board, hover_col)
-            if row_preview is not None:
-                preview_pos = (hover_col * COIN_SIZE + COIN_SIZE//2, UI_HEIGHT + row_preview * COIN_SIZE + COIN_SIZE//2)
-                # Draw semi-transparent red coin
-                preview_surf = pygame.Surface((COIN_SIZE, COIN_SIZE), pygame.SRCALPHA)
-                pygame.draw.circle(preview_surf, (255, 0, 0, 100), (COIN_SIZE//2, COIN_SIZE//2), COIN_SIZE//2 - 5)
-                screen.blit(preview_surf, (hover_col * COIN_SIZE, UI_HEIGHT + row_preview * COIN_SIZE))
-
-    # --- Update Coins ---
-    for coin in coins:
-        if not coin.settled:
-            coin.update(dt, screen.get_height(), coins)
-        else:
-            # Only switch turn after last coin settles
-            if coin == coins[-1] and turn == 0:
-                row = (coin.rect.centery - UI_HEIGHT) // 100
-                col = coin.rect.centerx // 100
-                if 0 <= row < 6 and 0 <= col < 7 and board[row][col] is None:
-                    board[row][col] = 0
-                    print(f"Player red placed at row {row}, column {col}")
-                    turn = 1 
-                    if winning_move(board, 0):
-                        winner = "red"
+                pass  # wait until last coin settles
+            else:
+                col, _ = minimax(board, minimax_depth, -math.inf, math.inf, True)
+                row = get_next_open_row(board, col)
+                if row is not None:
+                    board[row][col] = 1
+                    position_coin = (col * COIN_SIZE + COIN_SIZE//2, 50)  # start from top
+                    coins.append(Coin(position_coin, "blue"))
+                    print(f"Player blue placed at row {row}, column {col}")
+                    turn = 0  # back to player
+                    if winning_move(board, 1):
+                        winner = "blue"
                         game_over = True
                     elif Drawcheck(board):
                         winner = ""
                         game_over = True
-        coin.draw(screen)
 
-    # --- AI Move ---
-    if turn == 1 and not game_over and interact:
-        if coins and not coins[-1].settled:
-            pass  # wait until last coin settles
-        else:
-            col, _ = minimax(board, 5, -math.inf, math.inf, True)
-            row = get_next_open_row(board, col)
-            if row is not None:
-                board[row][col] = 1
-                position_coin = (col * COIN_SIZE + COIN_SIZE//2, 50)  # start from top
-                coins.append(Coin(position_coin, "blue"))
-                print(f"Player blue placed at row {row}, column {col}")
-                turn = 0  # back to player
-                if winning_move(board, 1):
-                    winner = "blue"
-                    game_over = True
-                elif Drawcheck(board):
-                    winner = ""
-                    game_over = True
+        
+        screen.blit(obstacle, (0, UI_HEIGHT))
 
-    
-    screen.blit(obstacle, (0, UI_HEIGHT))
+        # --- UI Drawing ---
+        if not game_over:
+            turn_text = f"{'Red' if turn == 0 else 'Blue'}'s Turn"
+            text_color = "red" if turn == 0 else "dodgerblue"
+            text_surface = UI_FONT.render(turn_text, True, text_color)
+            text_rect = text_surface.get_rect(center=(screen.get_width() / 2, UI_HEIGHT / 2))
+            screen.blit(text_surface, text_rect)
 
-    # --- UI Drawing ---
-    if not game_over:
-        turn_text = f"{'Red' if turn == 0 else 'Blue'}'s Turn"
-        text_color = "red" if turn == 0 else "dodgerblue"
-        text_surface = UI_FONT.render(turn_text, True, text_color)
-        text_rect = text_surface.get_rect(center=(screen.get_width() / 2, UI_HEIGHT / 2))
-        screen.blit(text_surface, text_rect)
+        # --- Draw Winner Overlay ---
+        if game_over:
+            overlay = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 180))
+            screen.blit(overlay, (0, 0))
+            interact = False
+            winner_text = (f"Player '{winner.capitalize()}' Wins!" if winner else "It's a Draw!")
+            winner_surface = WINNER_FONT.render(winner_text, True, "gold")
+            winner_rect = winner_surface.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
+            screen.blit(winner_surface, winner_rect)
 
-    # --- Draw Winner Overlay ---
-    if game_over:
-        overlay = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
-        overlay.fill((0, 0, 0, 180))
-        screen.blit(overlay, (0, 0))
-        interact = False
-        winner_text = (f"Player '{winner.capitalize()}' Wins!" if winner else "It's a Draw!")
-        winner_surface = WINNER_FONT.render(winner_text, True, "gold")
-        winner_rect = winner_surface.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
-        screen.blit(winner_surface, winner_rect)
+        pygame.display.flip()
+        dt = clock.tick(60) / 1000
 
-    pygame.display.flip()
-    dt = clock.tick(60) / 1000
-
-pygame.quit()
+    pygame.quit()
