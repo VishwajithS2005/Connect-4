@@ -191,6 +191,7 @@ def run_game(player_color="red", difficulty="medium"):
 def update_text_ui(screen, turn, game_over, UI_FONT, UI_HEIGHT, is_red=True):
 # --- UI Drawing ---
         if not game_over:
+            pygame.draw.rect(screen, (0, 0, 0), (0, 0, screen.get_width(), UI_HEIGHT))
             turn_text = f"{'Red' if (turn+int(is_red)) == 1  else 'Blue'}'s Turn"
             text_color = "red" if (turn+int(is_red)) == 1 else "dodgerblue"
             text_surface = UI_FONT.render(turn_text, True, text_color)
