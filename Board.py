@@ -101,6 +101,21 @@ while running:
 
             # Do NOT change turn yet! Wait until coin settles
     screen.fill((0, 0, 0))
+    screen.blit(obstacle, (0, UI_HEIGHT))
+    # --- Player Hover Preview ---
+    if turn == 0 and interact and not game_over:
+        mouse_x, _ = pygame.mouse.get_pos()
+        hover_col = mouse_x // COIN_SIZE
+        if 0 <= hover_col < 7:
+            # find row where coin would land
+            row_preview = get_next_open_row(board, hover_col)
+            if row_preview is not None:
+                preview_pos = (hover_col * COIN_SIZE + COIN_SIZE//2, UI_HEIGHT + row_preview * COIN_SIZE + COIN_SIZE//2)
+                # Draw semi-transparent red coin
+                preview_surf = pygame.Surface((COIN_SIZE, COIN_SIZE), pygame.SRCALPHA)
+                pygame.draw.circle(preview_surf, (255, 0, 0, 150), (COIN_SIZE//2, COIN_SIZE//2), COIN_SIZE//2 - 5)
+                screen.blit(preview_surf, (hover_col * COIN_SIZE, UI_HEIGHT + row_preview * COIN_SIZE))
+
     # --- Update Coins ---
     for coin in coins:
         if not coin.settled:
@@ -127,7 +142,7 @@ while running:
         if coins and not coins[-1].settled:
             pass  # wait until last coin settles
         else:
-            col, _ = minimax(board, 4, -math.inf, math.inf, True)
+            col, _ = minimax(board, 5, -math.inf, math.inf, True)
             row = get_next_open_row(board, col)
             if row is not None:
                 board[row][col] = 1
