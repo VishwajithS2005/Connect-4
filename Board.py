@@ -137,7 +137,7 @@ def run_game(player_color="red", difficulty="medium"):
                         print(f"Player {color} placed at row {row}, column {col}")
                         turn = 1-turn
                         if winning_move(board, 0):
-                            winner = "red"
+                            winner = "Player"
                             game_over = True
                         elif Drawcheck(board):
                             winner = ""
@@ -161,7 +161,7 @@ def run_game(player_color="red", difficulty="medium"):
                     print(f"Player {color} placed at row {row}, column {col}")
                     turn = 1-turn  # back to player
                     if winning_move(board, 1):
-                        winner = "blue"
+                        winner = "AI"
                         game_over = True
                     elif Drawcheck(board):
                         winner = ""
@@ -178,7 +178,7 @@ def run_game(player_color="red", difficulty="medium"):
             overlay.fill((0, 0, 0, 180))
             screen.blit(overlay, (0, 0))
             interact = False
-            winner_text = (f"Player '{winner.capitalize()}' Wins!" if winner else "It's a Draw!")
+            winner_text = (f"Player '{winner}' Wins!" if winner else "It's a Draw!")
             winner_surface = WINNER_FONT.render(winner_text, True, "gold")
             winner_rect = winner_surface.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
             screen.blit(winner_surface, winner_rect)
