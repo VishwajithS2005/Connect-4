@@ -91,13 +91,17 @@ while running:
 
             color = turns[turn]
             position_coin = (event.pos[0] // 100 * 100 + 50, 50)  # start near top
-            coins.append(Coin(position_coin, color))
-
-            for coin in coins:
+            col = event.pos[0] // 100
+            row = get_next_open_row(board, col)
+            if row is None:
+                print(f"Column {col} is full. Cannot place coin.")
+                continue  # skip placing coin
+            '''for coin in coins:
                 if coin != coins[-1] and coin.rect.colliderect(coins[-1].rect):
                     coins.remove(coins[-1])
                     print("Collision on spawn, coin not added.")
-                    break
+                    break'''
+            coins.append(Coin(position_coin, color))
 
             # Do NOT change turn yet! Wait until coin settles
     screen.fill((0, 0, 0))
@@ -113,7 +117,7 @@ while running:
                 preview_pos = (hover_col * COIN_SIZE + COIN_SIZE//2, UI_HEIGHT + row_preview * COIN_SIZE + COIN_SIZE//2)
                 # Draw semi-transparent red coin
                 preview_surf = pygame.Surface((COIN_SIZE, COIN_SIZE), pygame.SRCALPHA)
-                pygame.draw.circle(preview_surf, (255, 0, 0, 150), (COIN_SIZE//2, COIN_SIZE//2), COIN_SIZE//2 - 5)
+                pygame.draw.circle(preview_surf, (255, 0, 0, 100), (COIN_SIZE//2, COIN_SIZE//2), COIN_SIZE//2 - 5)
                 screen.blit(preview_surf, (hover_col * COIN_SIZE, UI_HEIGHT + row_preview * COIN_SIZE))
 
     # --- Update Coins ---
