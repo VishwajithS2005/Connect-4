@@ -1,10 +1,10 @@
-import pygame
+import pygame # type: ignore
 from Winning_Move import *
 from Draw import *
 from Minimax import *
 import time
 
-# --- Initialization ---
+#Initialization
 def run_game(player_color="red", difficulty="medium"):
     pygame.init()
     UI_HEIGHT = 100
@@ -178,7 +178,7 @@ def run_game(player_color="red", difficulty="medium"):
             overlay.fill((0, 0, 0, 180))
             screen.blit(overlay, (0, 0))
             interact = False
-            winner_text = (f"Player '{winner}' Wins!" if winner else "It's a Draw!")
+            winner_text = (f"'{winner}' Wins!" if winner else "It's a Draw!")
             winner_surface = WINNER_FONT.render(winner_text, True, "gold")
             winner_rect = winner_surface.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
             screen.blit(winner_surface, winner_rect)

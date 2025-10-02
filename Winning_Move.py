@@ -1,4 +1,4 @@
-def Horcheck(ar,chip,cnt=[0,0]):
+def Horcheck(ar,chip,cnt=[0,0]):        #Horizontal Check
     for y in range(len(ar)):
         for x in range(len(ar[y])-3):
             flag = 0
@@ -9,7 +9,7 @@ def Horcheck(ar,chip,cnt=[0,0]):
                 cnt[chip] += 1
                 return True
 
-def Vercheck(ar,chip,cnt=[0,0]):
+def Vercheck(ar,chip,cnt=[0,0]):        #Vertical Check
     for x in range(len(ar[0])):
         for y in range(len(ar)-3):
             flag = 0
@@ -20,7 +20,7 @@ def Vercheck(ar,chip,cnt=[0,0]):
                 cnt[chip] += 1
                 return True
 
-def Diag1check(ar,chip,cnt=[0,0]):
+def Diag1check(ar,chip,cnt=[0,0]):      #Diagonal Check
     for y in range(len(ar)-3):
         for x in range(3, len(ar[y])):
             flag = 0
@@ -31,7 +31,7 @@ def Diag1check(ar,chip,cnt=[0,0]):
                 cnt[chip] += 1
                 return True
 
-def Diag2check(ar,chip,cnt=[0,0]):
+def Diag2check(ar,chip,cnt=[0,0]):      #Anti-Diagonal Check
     for y in range(len(ar)-3):
         for x in range(len(ar[y])-3):
             flag = 0
@@ -42,5 +42,5 @@ def Diag2check(ar,chip,cnt=[0,0]):
                 cnt[chip] += 1
                 return True
 
-def winning_move(board, piece):
+def winning_move(board, piece):         #Check for winning move
     return Horcheck(board, piece) or Vercheck(board, piece) or Diag1check(board, piece) or Diag2check(board, piece)
