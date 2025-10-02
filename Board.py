@@ -82,89 +82,68 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and interact and turn==0:  # left click
-            if coins != [] and coins[-1].settled == False:
-                break
-            color = turns[turn]
-            position_coin = (event.pos[0] // 100 * 100 + 50, event.pos[1] // 100 * 100 + 50)
-            coins.append(Coin(position_coin, color))
-            for coin in coins:
-                if coin != coins[-1] and coin.rect.colliderect(coins[-1].rect):
-                    coins.remove(coins[-1])
-                    print("Collision on spawn, coin not added.")
-                    break
-            #print(board, turn)
-            turn = (turn + 1) % 2
-        elif turn==1 and interact:
-            if coins != [] and coins[-1].settled == False:
-                break
-            color = turns[turn]
-            col, score = minimax(board, 4, -math.inf, math.inf, True)
-            if col is None:
-                # fallback: pick any valid column
-                valid = get_valid_locations(board)
-                if valid:
-                    col = random.choice(valid)
-                else:
-                    # no move possible
-                    col = 0
 
-            '''for c in range(7):
-                if board[0][c] is None:
-                    col = c
-                    break'''
-            position_coin = (col * 100 + 50, 50)
-            #print(position_coin)
-            coins.append(Coin(position_coin, color))
-            for coin in coins:
-                if coin != coins[-1] and coin.rect.colliderect(coins[-1].rect):
-                    coins.remove(coins[-1])
-                    print("Collision on spawn, coin not added.")
-                    break
-            #print(board, turn)
-            turn = (turn + 1) % 2
+        # --- Player Move ---
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and interact and turn == 0:
+            col = event.pos[0] // COIN_SIZE
+            row = get_next_open_row(board, col)
+            if row is not None:
+                # Place player piece
+                board[row][col] = 0  # 0 = player (red)
+                position_coin = (col * COIN_SIZE + COIN_SIZE//2, UI_HEIGHT + row * COIN_SIZE + COIN_SIZE//2)
+                coins.append(Coin(position_coin, "red"))
+                print(f"Player red placed at row {row}, column {col}")
+
+                # Check for win/draw
+                if winning_move(board, 0):
+                    winner = "red"
+                    game_over = True
+                elif Drawcheck(board):
+                    winner = ""
+                    game_over = True
+
+                turn = 1  # AI turn
+
+    # --- AI Move ---
+    if turn == 1 and not game_over and interact:
+        col, _ = minimax(board, 4, -math.inf, math.inf, True)
+        row = get_next_open_row(board, col)
+        if row is not None:
+            board[row][col] = 1  # 1 = AI (blue)
+            position_coin = (col * COIN_SIZE + COIN_SIZE//2, UI_HEIGHT + row * COIN_SIZE + COIN_SIZE//2)
+            coins.append(Coin(position_coin, "blue"))
+            print(f"Player blue placed at row {row}, column {col}")
+
+            # Check for win/draw
+            if winning_move(board, 1):
+                winner = "blue"
+                game_over = True
+            elif Drawcheck(board):
+                winner = ""
+                game_over = True
+
+            turn = 0  # back to player
+
+    # --- Drawing ---
     screen.fill("black")
+    for coin in coins:
+        coin.draw(screen)
+    screen.blit(obstacle, (0, UI_HEIGHT))
 
     # --- UI Drawing ---
     if not game_over:
-        if turn == 0:
-            turn_text = "Red's Turn"
-            text_color = "red"
-        else:
-            turn_text = "Blue's Turn"
-            text_color = "dodgerblue"
+        turn_text = f"{'Red' if turn == 0 else 'Blue'}'s Turn"
+        text_color = "red" if turn == 0 else "dodgerblue"
         text_surface = UI_FONT.render(turn_text, True, text_color)
         text_rect = text_surface.get_rect(center=(screen.get_width() / 2, UI_HEIGHT / 2))
         screen.blit(text_surface, text_rect)
 
-    for coin in coins:
-        if not coin.settled:
-            coin.update(dt, screen.get_height(), coins)
-        else:
-            row = (coin.rect.centery - UI_HEIGHT) // 100
-            col = coin.rect.centerx // 100
-            if 0 <= row < 6 and 0 <= col < 7 and board[row][col] is None:
-                last_player_index = (turn - 1) % 2
-                board[row][col] = last_player_index
-                print(f"Player {turns[turn]} placed at row {row}, column {col}")
-                if winning_move(board, last_player_index):
-                    winner = turns[last_player_index]
-                    game_over = True
-                    break
-                if Drawcheck(board):
-                    winner = ""
-                    game_over = True
-                    break
-        coin.draw(screen)
-    
-    screen.blit(obstacle, (0, UI_HEIGHT))
-
-    # --- Draw Winner Screen if Game Over ---
+    # --- Draw Winner Overlay ---
     if game_over:
         overlay = pygame.Surface((screen.get_width(), screen.get_height()), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 180))
         screen.blit(overlay, (0, 0))
-        interact=False
+        interact = False
         winner_text = (f"Player '{winner.capitalize()}' Wins!" if winner else "It's a Draw!")
         winner_surface = WINNER_FONT.render(winner_text, True, "gold")
         winner_rect = winner_surface.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
