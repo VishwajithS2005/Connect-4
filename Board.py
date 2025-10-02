@@ -1,5 +1,6 @@
 import pygame
 from Winning_Move import *
+from Draw import *
 import time
 
 # --- Initialization ---
@@ -85,6 +86,7 @@ while running:
                 break
             color = turns[turn]
             position_coin = (event.pos[0] // 100 * 100 + 50, event.pos[1] // 100 * 100 + 50)
+            print(position_coin)
             coins.append(Coin(position_coin, color))
             turn = (turn + 1) % 2
             for coin in coins:
@@ -116,8 +118,12 @@ while running:
             if 0 <= row < 6 and 0 <= col < 7 and board[row][col] is None:
                 last_player_index = (turn - 1) % 2
                 board[row][col] = last_player_index
+                print(board)
                 if Horcheck(board, last_player_index) or Vercheck(board, last_player_index) or Diag1check(board, last_player_index) or Diag2check(board, last_player_index):
                     winner = turns[last_player_index]
+                    game_over = True
+                if Drawcheck(board):
+                    winner = ""
                     game_over = True
         coin.draw(screen)
     
@@ -129,7 +135,7 @@ while running:
         overlay.fill((0, 0, 0, 180))
         screen.blit(overlay, (0, 0))
         interact=False
-        winner_text = f"Player '{winner.capitalize()}' Wins!"
+        winner_text = (f"Player '{winner.capitalize()}' Wins!" if winner else "It's a Draw!")
         winner_surface = WINNER_FONT.render(winner_text, True, "gold")
         winner_rect = winner_surface.get_rect(center=(screen.get_width() / 2, screen.get_height() / 2))
         screen.blit(winner_surface, winner_rect)
