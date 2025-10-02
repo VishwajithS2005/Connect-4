@@ -81,11 +81,30 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and interact:  # left click
+        elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and interact and turn==0:  # left click
             if coins != [] and coins[-1].settled == False:
                 break
             color = turns[turn]
             position_coin = (event.pos[0] // 100 * 100 + 50, event.pos[1] // 100 * 100 + 50)
+            print(position_coin)
+            coins.append(Coin(position_coin, color))
+            turn = (turn + 1) % 2
+            for coin in coins:
+                if coin != coins[-1] and coin.rect.colliderect(coins[-1].rect):
+                    coins.remove(coins[-1])
+                    print("Collision on spawn, coin not added.")
+                    turn = (turn - 1) % 2
+                    break
+        elif turn==1 and interact:
+            if coins != [] and coins[-1].settled == False:
+                break
+            color = turns[turn]
+            col = 0
+            for c in range(7):
+                if board[0][c] is None:
+                    col = c
+                    break
+            position_coin = (col * 100 + 50, 50)
             print(position_coin)
             coins.append(Coin(position_coin, color))
             turn = (turn + 1) % 2
