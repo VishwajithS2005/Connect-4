@@ -1,6 +1,7 @@
 import pygame
 from Winning_Move import *
 from Draw import *
+from Minimax import *
 import time
 
 # --- Initialization ---
@@ -86,34 +87,42 @@ while running:
                 break
             color = turns[turn]
             position_coin = (event.pos[0] // 100 * 100 + 50, event.pos[1] // 100 * 100 + 50)
-            print(position_coin)
             coins.append(Coin(position_coin, color))
-            turn = (turn + 1) % 2
             for coin in coins:
                 if coin != coins[-1] and coin.rect.colliderect(coins[-1].rect):
                     coins.remove(coins[-1])
                     print("Collision on spawn, coin not added.")
-                    turn = (turn - 1) % 2
                     break
+            #print(board, turn)
+            turn = (turn + 1) % 2
         elif turn==1 and interact:
             if coins != [] and coins[-1].settled == False:
                 break
             color = turns[turn]
-            col = 0
-            for c in range(7):
+            col, score = minimax(board, 4, -math.inf, math.inf, True)
+            if col is None:
+                # fallback: pick any valid column
+                valid = get_valid_locations(board)
+                if valid:
+                    col = random.choice(valid)
+                else:
+                    # no move possible
+                    col = 0
+
+            '''for c in range(7):
                 if board[0][c] is None:
                     col = c
-                    break
+                    break'''
             position_coin = (col * 100 + 50, 50)
-            print(position_coin)
+            #print(position_coin)
             coins.append(Coin(position_coin, color))
-            turn = (turn + 1) % 2
             for coin in coins:
                 if coin != coins[-1] and coin.rect.colliderect(coins[-1].rect):
                     coins.remove(coins[-1])
                     print("Collision on spawn, coin not added.")
-                    turn = (turn - 1) % 2
                     break
+            #print(board, turn)
+            turn = (turn + 1) % 2
     screen.fill("black")
 
     # --- UI Drawing ---
@@ -137,13 +146,15 @@ while running:
             if 0 <= row < 6 and 0 <= col < 7 and board[row][col] is None:
                 last_player_index = (turn - 1) % 2
                 board[row][col] = last_player_index
-                print(board)
-                if Horcheck(board, last_player_index) or Vercheck(board, last_player_index) or Diag1check(board, last_player_index) or Diag2check(board, last_player_index):
+                print(f"Player {turns[turn]} placed at row {row}, column {col}")
+                if winning_move(board, last_player_index):
                     winner = turns[last_player_index]
                     game_over = True
+                    break
                 if Drawcheck(board):
                     winner = ""
                     game_over = True
+                    break
         coin.draw(screen)
     
     screen.blit(obstacle, (0, UI_HEIGHT))

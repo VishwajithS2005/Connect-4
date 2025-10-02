@@ -41,3 +41,6 @@ def Diag2check(ar,chip,cnt=[0,0]):
             if flag == 4:
                 cnt[chip] += 1
                 return True
+
+def winning_move(board, piece):
+    return Horcheck(board, piece) or Vercheck(board, piece) or Diag1check(board, piece) or Diag2check(board, piece)
